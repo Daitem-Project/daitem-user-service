@@ -2,10 +2,7 @@ package com.daitem.user_service.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -21,10 +18,12 @@ public class User {
     private Long id;
 
     @NotNull
+    @Setter
     @Column(name = "user_email")
     private String email;
 
     @NotNull
+    @Setter
     @Column(name = "user_password")
     private String password;
 
@@ -61,6 +60,11 @@ public class User {
     @Column(name = "social_name")
     private String socialName;
 
+    @Column(name = "user_role")
+    @Setter
+    @Enumerated(EnumType.STRING)
+    private UserRole role;
+
     @PrePersist
     protected void onPrePersist(){
 
@@ -84,6 +88,7 @@ public class User {
         this.createdAt = LocalDateTime.now();
         this.rating = 0.0;
         this.point = 0;
+        this.role = UserRole.ROLE_USER;
     }
 
 //    @Builder(builderMethodName = "social")
