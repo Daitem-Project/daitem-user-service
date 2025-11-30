@@ -1,80 +1,88 @@
 package com.daitem.user_service.jwt;
 
-import com.daitem.user_service.entity.dto.CustomUserDetail;
-import com.daitem.user_service.entity.dto.UserLoginRequest;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.InternalAuthenticationServiceException;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.util.StreamUtils;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Iterator;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
-@RequiredArgsConstructor
-public class LoginFilter extends UsernamePasswordAuthenticationFilter {
+public class LoginFilter extends AbstractAuthenticationProcessingFilter {
 
-    private final AuthenticationManager authenticationManager;
+    public static final String SPRING_SECURITY_FORM_USERNAME_KEY = "username";
 
-    private final JwtUtil jwtUtil;
+    public static final String SPRING_SECURITY_FORM_PASSWORD_KEY = "password";
+
+    private static final RequestMatcher DEFAULT_ANT_PATH_REQUEST_MATCHER = PathPatternRequestMatcher.withDefaults()
+            .matcher(HttpMethod.POST, "/api/login");
+
+    private String usernameParameter = SPRING_SECURITY_FORM_USERNAME_KEY;
+
+    private String passwordParameter = SPRING_SECURITY_FORM_PASSWORD_KEY;
+
+    private final AuthenticationSuccessHandler authenticationSuccessHandler;
+
+    public LoginFilter(AuthenticationManager authenticationManager, AuthenticationSuccessHandler authenticationSuccessHandler) {
+        super(DEFAULT_ANT_PATH_REQUEST_MATCHER, authenticationManager);
+        this.authenticationSuccessHandler = authenticationSuccessHandler;
+    }
+
 
 
     @Override
-    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
-
-        //클라이언트 요청에서 username, password 추출
-        try {
-            UserLoginRequest userLoginRequest = new ObjectMapper().readValue(request.getInputStream(), UserLoginRequest.class);
-
-            String email = userLoginRequest.email();
-            String password = userLoginRequest.password();
-
-            //스프링 시큐리티에서 email password를 검증하기 위해서는 token에 담아야 함
-            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(email, password, null);
-
-            //token에 담은 검증을 위한 AuthenticationManager로 전달
-            return authenticationManager.authenticate(authToken);
-
-        }catch (IOException e){
-            throw new InternalAuthenticationServiceException(e.getMessage());
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
+            throws AuthenticationException {
+        if (!request.getMethod().equals("POST")) {
+            throw new AuthenticationServiceException("Authentication method not supported: " + request.getMethod());
         }
 
+        Map<String, String> loginMap;
 
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            ServletInputStream inputStream = request.getInputStream();
+            String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
+            loginMap = objectMapper.readValue(messageBody, new TypeReference<>() {
+            });
 
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        String username = loginMap.get(usernameParameter);
+        username = (username != null) ? username.trim() : "";
+        String password = loginMap.get(passwordParameter);
+        password = (password != null) ? password : "";
+
+        UsernamePasswordAuthenticationToken authRequest = UsernamePasswordAuthenticationToken.unauthenticated(username,
+                password);
+        setDetails(request, authRequest);
+        return this.getAuthenticationManager().authenticate(authRequest);
     }
 
-    //로그인 성공시 실행하는 메소드
+    protected void setDetails(HttpServletRequest request, UsernamePasswordAuthenticationToken authRequest) {
+        authRequest.setDetails(this.authenticationDetailsSource.buildDetails(request));
+    }
+
     @Override
-    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) {
-
-        CustomUserDetail customUserDetails = (CustomUserDetail) authentication.getPrincipal();
-
-        String email = customUserDetails.getUsername();
-
-        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
-        Iterator<? extends GrantedAuthority> iterator = authorities.iterator();
-        GrantedAuthority auth = iterator.next();
-
-        String role = auth.getAuthority();
-
-        String token = jwtUtil.createJwt(email, role, 60*60*1000L);
-
-        response.addHeader("Authorization", "Bearer " + token);
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
+        authenticationSuccessHandler.onAuthenticationSuccess(request, response, authResult);
     }
 
-    //로그인 실패시 실행하는 메소드
-    @Override
-    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) {
-
-        response.setStatus(401);
-
-    }
 }
