@@ -224,13 +224,13 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
     /**
      * 회원탈퇴
      */
-    public void deleteUser(String userName) throws AccessDeniedException {
+    public void deleteUser(String username) throws AccessDeniedException {
         // 본인또는 관리자만 삭제가능
         SecurityContext context = SecurityContextHolder.getContext();
         String sessionUsername = context.getAuthentication().getName();
         String sessionRole = context.getAuthentication().getAuthorities().iterator().next().getAuthority();
 
-        boolean isOwner = sessionUsername.equals(userName);
+        boolean isOwner = sessionUsername.equals(username);
         boolean isAdmin = sessionRole.equals("ROLE_"+UserRole.ADMIN.name());
 
         if (!isOwner && !isAdmin) {
@@ -238,10 +238,10 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
         }
 
 
-        userRepository.deleteByUsername(userName);
+        userRepository.deleteByUsername(username);
 
         //탈퇴와 함께 토큰 제거
-        jwtService.deleteByUserName(userName);
+        jwtService.deleteByUserName(username);
     }
 
     /**
@@ -253,5 +253,11 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
     }
 
 
+    /**
+     * 로그아웃
+     */
+    public void logoutUser(String refresh){
 
+        jwtService.deleteByRefreshToken(refresh);
+    }
 }
