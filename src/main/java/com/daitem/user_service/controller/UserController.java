@@ -87,6 +87,19 @@ public class UserController {
         return ResponseEntity.ok(userService.existsUser(userName));
     }
 
+    /**
+     * 로그아웃
+     */
+    @PostMapping("/user/logout")
+    public ResponseEntity<Void> logoutUser(@RequestBody Map<String, String> refresh) {
+
+        String refreshToken = refresh.get("refreshToken");
+
+        userService.logoutUser(refreshToken);
+
+        return ResponseEntity.ok().build();
+    }
+
 
 
 
