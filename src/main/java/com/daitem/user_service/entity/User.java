@@ -99,8 +99,9 @@ public class User {
      **/
 
     public void updateUser(UserUpdateRequest request){
-        this.password = request.password();
+        this.name=request.name();
         this.nickname = request.nickname();
+        this.phoneNumber=request.phoneNumber();
         this.profileUrl = request.profileUrl();
     }
 

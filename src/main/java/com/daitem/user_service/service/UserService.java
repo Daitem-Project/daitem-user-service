@@ -131,7 +131,7 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
         User user = userRepository.findByUsernameAndIsLocked(username, false)
                 .orElseThrow(() -> new UsernameNotFoundException("해당 유저를 찾을 수 없습니다: " + username));
 
-        return new UserResponse(username, user.isSocial(), user.getNickname(), user.getEmail(), user.getProfileUrl(), user.getPhoneNumber());
+        return new UserResponse(username, user.getName(), user.isSocial(), user.getNickname(), user.getEmail(), user.getProfileUrl(), user.getPhoneNumber());
     }
 
     public List<User> getUsers() {
@@ -172,7 +172,7 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
             attributes = (Map<String, Object>)oauth2User.getAttributes();
             username = registrationId + "_" + attributes.get("sub");
             email = attributes.get("email").toString();
-            nickname = attributes.get("name").toString();
+            name = attributes.get("name").toString();
         }else if(registrationId.equals(SocialType.KAKAO.name())){
             attributes = (Map<String, Object>)oauth2User.getAttributes();
 
@@ -181,7 +181,7 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
             Map<String, Object> profile = (Map<String, Object>)kakaoAccount.get("profile");
 
             username = registrationId + "_" + attributes.get("id").toString();
-            nickname = profile.get("nickname").toString();
+            name = profile.get("nickname").toString();
             profileUrl = profile.get("profile_image_url").toString();
             email = kakaoAccount.get("email").toString();
 
@@ -197,7 +197,7 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
             SocialUpdateRequest dto = new  SocialUpdateRequest();
 
             dto.setEmail(email);
-            dto.setNickname(nickname);
+            dto.setNickname("소셜유저"+user.get().getId());
             dto.setName(name);
             dto.setProfileUrl(profileUrl);
             dto.setPhoneNumber(phoneNumber);
@@ -208,6 +208,8 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
 
         }else{
             User newUser = User.createSocialUser(username, email, name, nickname, phoneNumber, profileUrl, SocialType.valueOf(registrationId));
+
+            newUser.setNickname("소셜유저" + newUser.getId());
 
             userRepository.save(newUser);
 
@@ -260,4 +262,12 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
 
         jwtService.deleteByRefreshToken(refresh);
     }
+
+    /**
+     * 패스워드 일치 확인
+     */
+//    public boolean checkPassword(String username, String password, boolean isSocial){
+//
+//
+//    }
 }
