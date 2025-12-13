@@ -15,7 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.util.StreamUtils;
 
@@ -29,8 +29,7 @@ public class LoginFilter extends AbstractAuthenticationProcessingFilter {
 
     public static final String SPRING_SECURITY_FORM_PASSWORD_KEY = "password";
 
-    private static final RequestMatcher DEFAULT_ANT_PATH_REQUEST_MATCHER = PathPatternRequestMatcher.withDefaults()
-            .matcher(HttpMethod.POST, "/api/login");
+    private static final RequestMatcher DEFAULT_ANT_PATH_REQUEST_MATCHER = new AntPathRequestMatcher("/api/login", "POST");
 
     private String usernameParameter = SPRING_SECURITY_FORM_USERNAME_KEY;
 
