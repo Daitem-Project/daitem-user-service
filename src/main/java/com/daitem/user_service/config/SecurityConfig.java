@@ -138,8 +138,8 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests((auth) -> auth
                                 .requestMatchers(
-                                        "/api/signup",
-                                        "/api/login",
+                                        "/api/user/signup",
+                                        "/api/user/login",
                                         "/api/user/exist",
                                         "/api/jwt/exchange",
                                         "/api/jwt/refresh",
