@@ -13,7 +13,7 @@ import java.nio.file.AccessDeniedException;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/user")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -34,7 +34,7 @@ public class UserController {
     /**
      * 일반회원수정
      */
-    @PutMapping("/user/user-update")
+    @PutMapping("/user-update")
     public ResponseEntity<UserResponse> userUpdate(@AuthenticationPrincipal String username, @RequestBody @Valid UserUpdateRequest request) throws AccessDeniedException {
 
         userService.updateUser(username, request);
@@ -45,7 +45,7 @@ public class UserController {
     /**
      * 소셜회원수정
      */
-    @PutMapping("/user/social-update")
+    @PutMapping("/social-update")
     public ResponseEntity<UserResponse> socialUpdate(@AuthenticationPrincipal String username, @RequestBody @Valid SocialUpdateRequest request){
 
         userService.updateSocial(username, request);
@@ -57,7 +57,7 @@ public class UserController {
     /**
      * 회원조회
      */
-    @GetMapping("/user/mypage")
+    @GetMapping("/mypage")
     public ResponseEntity<UserResponse> readUser(@AuthenticationPrincipal String username){
 
         UserResponse response = userService.readUser(username);
@@ -68,7 +68,7 @@ public class UserController {
     /**
      * 회원탈퇴
      */
-    @DeleteMapping("/user/delete")
+    @DeleteMapping("/delete")
     public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal String username) throws AccessDeniedException {
 
         userService.deleteUser(username);
@@ -79,7 +79,7 @@ public class UserController {
     /**
      * 유저 존재여부
      */
-    @PostMapping("/user/exist")
+    @PostMapping("/exist")
     public ResponseEntity<Boolean> existUser(@RequestBody Map<String, String> request){
 
         String userName = request.get("username");
@@ -90,7 +90,7 @@ public class UserController {
     /**
      * 로그아웃
      */
-    @PostMapping("/user/logout")
+    @PostMapping("/logout")
     public ResponseEntity<Void> logoutUser(@RequestBody Map<String, String> refresh) {
 
         String refreshToken = refresh.get("refreshToken");
