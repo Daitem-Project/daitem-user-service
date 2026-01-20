@@ -8,8 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.AccessDeniedException;
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -24,9 +26,10 @@ public class UserController {
      * 회원가입
      */
     @PostMapping("/signup")
-    public ResponseEntity<Void> signup(@RequestBody @Valid UserCreatRequest request){
+    public ResponseEntity<Void> signup(@ModelAttribute @Valid UserCreatRequest request,
+                                       @RequestPart(value = "profileImage", required = false) MultipartFile profileImage){
 
-        userService.createUser(request);
+        userService.createUser(request, profileImage);
 
         return ResponseEntity.ok().build();
     }
@@ -96,6 +99,36 @@ public class UserController {
         String refreshToken = refresh.get("refreshToken");
 
         userService.logoutUser(refreshToken);
+
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 프로필 이미지설정
+     */
+    @PostMapping("/profile-image")
+    public ResponseEntity<?> updateProfile(@RequestParam("profileImage") MultipartFile profile,
+                                           @AuthenticationPrincipal String username){
+        // 1. 서비스 호출 -> 파일 저장 -> URL 반환 (/images/uuid.jpg)
+        String imageUrl = userService.uploadProfile(profile);
+
+        // 2. DB 업데이트 (Member 엔티티의 profileUrl 필드 수정)
+        userService.updateProfileUrl(username, imageUrl);
+
+        // 3. 프론트로 결과 반환
+        Map<String, String> response = new HashMap<>();
+        response.put("newProfileUrl", imageUrl); // 프론트는 이 URL을 바로 img src에 꽂으면 됨
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 프로필이미지 삭제
+     */
+    @DeleteMapping("/profile-image")
+    public ResponseEntity<Void> deleteProfileImage(@AuthenticationPrincipal String username) {
+
+        userService.deleteProfileUrl(username);
 
         return ResponseEntity.ok().build();
     }

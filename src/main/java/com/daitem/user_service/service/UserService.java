@@ -7,6 +7,7 @@ import com.daitem.user_service.entity.UserRole;
 import com.daitem.user_service.entity.dto.*;
 import com.daitem.user_service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
@@ -21,11 +22,14 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -38,10 +42,13 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
 
     private final JwtService jwtService;
 
+    @Value("${file.path}")
+    private String uploadPath;
+
     /**
      * 일반유저 생성
      */
-    public User createUser(UserCreatRequest request) {
+    public User createUser(UserCreatRequest request, MultipartFile profileImage) {
 
         //중복검사
         if(userRepository.existsByUsername(request.username())){
@@ -50,7 +57,13 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
 
         String encryptionPassword = passwordEncoder.encode(request.password());
 
-        User user = User.createUser(request.username(), request.email(), encryptionPassword, request.name(), request.nickname(), request.phoneNumber(), request.profileUrl());
+        String profileUrl = null;
+
+        if (profileImage != null && !profileImage.isEmpty()) {
+            profileUrl = uploadProfile(profileImage);
+        }
+
+        User user = User.createUser(request.username(), request.email(), encryptionPassword, request.name(), request.nickname(), request.phoneNumber(), profileUrl);
 
 
         userRepository.save(user);
@@ -270,4 +283,51 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
 //
 //
 //    }
+
+    /**
+     * 프로필 사진추가
+     */
+    public String uploadProfile(MultipartFile profileImage){
+        if(profileImage.isEmpty()) return null;
+
+        String imageName = profileImage.getOriginalFilename();
+        String uuid = UUID.randomUUID().toString();
+
+        String extension = imageName.substring(imageName.lastIndexOf("."));
+        String name = uuid + extension;
+
+        try{
+            File file = new File(uploadPath);
+            if(!file.exists()){
+                file.mkdirs();
+            }
+
+            File target = new File(uploadPath + name);
+            profileImage.transferTo(target);
+
+            return "/images/" + name;
+        }catch (Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 프로필 업데이트
+     */
+
+    public void updateProfileUrl(String username, String profileUrl){
+
+        User user = userRepository.findByUsername(username).orElseThrow(()-> new UsernameNotFoundException("유저가 존재하지 않습니다."));
+
+        user.setProfileUrl(profileUrl);
+
+        userRepository.save(user);
+    }
+
+    public void deleteProfileUrl(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("유저가 존재하지 않습니다."));
+
+        user.setProfileUrl(null);
+    }
 }
