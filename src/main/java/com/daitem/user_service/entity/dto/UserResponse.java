@@ -6,5 +6,6 @@ public record UserResponse(String username,
                            String nickname,
                            String email,
                            String profileUrl,
-                           String phoneNumber) {
+                           String phoneNumber,
+                           int point) {
 }
