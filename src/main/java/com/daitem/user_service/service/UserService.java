@@ -144,7 +144,7 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
         User user = userRepository.findByUsernameAndIsLocked(username, false)
                 .orElseThrow(() -> new UsernameNotFoundException("해당 유저를 찾을 수 없습니다: " + username));
 
-        return new UserResponse(username, user.getName(), user.isSocial(), user.getNickname(), user.getEmail(), user.getProfileUrl(), user.getPhoneNumber());
+        return new UserResponse(username, user.getName(), user.isSocial(), user.getNickname(), user.getEmail(), user.getProfileUrl(), user.getPhoneNumber(), user.getPoint());
     }
 
     public List<User> getUsers() {
@@ -292,7 +292,6 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
 
         String imageName = profileImage.getOriginalFilename();
         String uuid = UUID.randomUUID().toString();
-
         String extension = imageName.substring(imageName.lastIndexOf("."));
         String name = uuid + extension;
 
@@ -302,7 +301,9 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
                 file.mkdirs();
             }
 
-            File target = new File(uploadPath + name);
+            String fullPath = uploadPath.endsWith("/") ? uploadPath + name : uploadPath + "/" + name;
+
+            File target = new File(fullPath);
             profileImage.transferTo(target);
 
             return "/images/" + name;

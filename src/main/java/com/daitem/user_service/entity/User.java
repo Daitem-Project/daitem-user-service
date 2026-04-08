@@ -58,6 +58,7 @@ public class User {
     private double rating;
 
     @NotNull
+    @Setter
     @Column(name = "user_point")
     private int point;
 

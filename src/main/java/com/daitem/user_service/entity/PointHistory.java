@@ -37,7 +37,15 @@ public class PointHistory {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User userId;
+    private User user;
+
+    public PointHistory(User user, int amount, String reason, int point, LocalDateTime now) {
+        this.user = user;
+        this.changed = amount;
+        this.reason = reason;
+        this.amount = point;
+        this.changedAt = now;
+    }
 
     @PrePersist
     protected void onCreate(){
