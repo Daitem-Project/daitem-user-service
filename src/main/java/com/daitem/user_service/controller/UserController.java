@@ -2,6 +2,7 @@ package com.daitem.user_service.controller;
 
 import com.daitem.user_service.entity.User;
 import com.daitem.user_service.entity.dto.*;
+import com.daitem.user_service.service.EmailService;
 import com.daitem.user_service.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +22,10 @@ public class UserController {
 
     private final UserService userService;
 
+    private final EmailService emailService;
 
+
+    // @request
     /**
      * 회원가입
      */
@@ -132,6 +136,30 @@ public class UserController {
 
         return ResponseEntity.ok().build();
     }
+
+    /**
+     * 아이디 찾기
+     */
+    @PostMapping("find-id")
+    public ResponseEntity<Void> userFindId(@RequestBody @Valid UserFindIdRequest request){
+
+        emailService.sendUserName(request);
+
+        return ResponseEntity.ok().build();
+    }
+
+
+    /**
+     * 비밀번호 찾기
+     */
+    @PostMapping("find-pw")
+    public ResponseEntity<Void> userFindPw(@RequestBody @Valid UserTempPwRequest request){
+
+        userService.updateTempPassword(request);
+
+        return ResponseEntity.ok().build();
+    }
+
 
 
 

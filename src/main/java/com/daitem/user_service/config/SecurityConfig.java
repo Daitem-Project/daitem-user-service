@@ -144,7 +144,9 @@ public class SecurityConfig {
                                         "/api/jwt/exchange",
                                         "/api/jwt/refresh",
                                         "/",
-                                        "/h2-console/**"
+                                        "/h2-console/**",
+                                        "/api/user/find-id",
+                                        "/api/user/find-pw"
                                 ).permitAll()
 
                                 .requestMatchers("/oauth2/authorization/**").permitAll()        // 시작

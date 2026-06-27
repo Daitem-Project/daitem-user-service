@@ -42,6 +42,8 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
 
     private final JwtService jwtService;
 
+    private final EmailService emailService;
+
     @Value("${file.path}")
     private String uploadPath;
 
@@ -331,4 +333,24 @@ public class UserService extends DefaultOAuth2UserService implements UserDetails
 
         user.setProfileUrl(null);
     }
+
+
+    /**
+     * 비밀번호 수정 (임시비밀번호발급)
+     */
+    public void updateTempPassword(UserTempPwRequest request){
+
+        User user = userRepository.findByUsername(request.username()).orElseThrow(()-> new UsernameNotFoundException("존재하지 않는 유저입니다."));
+
+        if(!request.email().equals(user.getEmail())){
+            throw new IllegalArgumentException("아이디 또는 이메일이 일치하지 않습니다.");
+        }
+
+        String tempPassword = UUID.randomUUID().toString().substring(0, 10);
+        user.setPassword(passwordEncoder.encode(tempPassword));
+
+        emailService.sendUserPassword(new UserFindPwRequest(user.getUsername(), user.getEmail(), tempPassword));
+    }
+
+
 }
